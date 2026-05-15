@@ -114,16 +114,16 @@ public class App {
 
                     <div class="container">
 
-                        <div class="card">
-                            <h3>Ver Produtos</h3>
+                    <div class="card">
+                            <h3>Ver Animais</h3>
                             <p>Consultar lista completa</p>
-                            <a href="/produtos">Abrir</a>
+                            <a href="/animais">Abrir</a>
                         </div>
 
-                        <div class="card">
-                            <h3>+ Novo Produto</h3>
+                          <div class="card">
+                            <h3>+ Novo Animal</h3>
                             <p>Adicionar novo registo</p>
-                            <a href="/produtonovo">Criar</a>
+                            <a href="/novoanimal">Criar</a>
                         </div>
 
                     </div>
@@ -172,6 +172,7 @@ public class App {
                     <table>
                         <tr>
                             <th>ID</th>
+                            <th>Pais</th>
                             <th>Nif</th>
                             <th>Nome</th>
                             <th>Email</th>
@@ -194,12 +195,14 @@ public class App {
                 while (rs.next()) {
                     int id = rs.getInt("id");
                     String nome = rs.getString("nome");
+                    String pais = rs.getString("pais");
                     String email = rs.getString("email");
                     String telefone = rs.getString("telefone");
                     String nifx = rs.getString("nif");
 
                     html.append("<tr>");
                     html.append("<td>").append(id).append("</td>");
+                    html.append("<td>").append(pais).append("</td>");
                     html.append("<td>").append(nifx).append("</td>");
                     html.append("<td>").append(nome).append("</td>");
                     html.append("<td>").append(email).append("</td>");
@@ -275,6 +278,9 @@ public class App {
                     NIF:
                     <input name='nif' required>
 
+                    Pais:
+                    <input name='pais' required>
+
                     Nome:
                     <input name='nome' required>
 
@@ -326,6 +332,7 @@ public class App {
                 String[] params = body.split("&");
 
                 String nif = "";
+                String pais = "";
                 String nome = "";
                 String email = "";
                 String telefone = "";
@@ -339,7 +346,8 @@ public class App {
 
                         switch (key) {
                             case "nif": nif = value; break;
-                            case "nome": nome = value; break;
+                            case "pais": pais = value; break;
+                            case "nome": nome = value; break;  
                             case "email": email = value; break;
                             case "telefone": telefone = value; break;
                         }
@@ -352,13 +360,14 @@ public class App {
                     throw new Exception("Ligação à BD falhou!");
                 }
 
-                String sql = "INSERT INTO clientes(nome,nif,email,telefone) VALUES (?,?,?,?)";
+                String sql = "INSERT INTO clientes(nome,pais,nif,email,telefone) VALUES (?,?,?,?,?)";
                 PreparedStatement ps = con.prepareStatement(sql);
 
                 ps.setString(1, nome);
-                ps.setString(2, nif);
-                ps.setString(3, email);
-                ps.setString(4, telefone);
+                ps.setString(2, pais);
+                ps.setString(3, nif);
+                ps.setString(4, email);
+                ps.setString(5, telefone);
 
                 ps.executeUpdate();
 
@@ -456,6 +465,7 @@ public class App {
                 }
 
                 String nome = rs.getString("nome");
+                String pais = rs.getString("pais");
                 String email = rs.getString("email");
                 String telefone = rs.getString("telefone");
 
@@ -481,6 +491,7 @@ public class App {
                 html.append("<input type='hidden' name='id' value='").append(id).append("'>");
 
                 html.append("Nome:<input name='nome' value='").append(nome).append("' required>");
+                html.append("Pais:<input name='pais' value='").append(pais).append("' required>");
                 html.append("Email:<input name='email' value='").append(email).append("' required>");
                 html.append("Telefone:<input name='telefone' value='").append(telefone).append("'>");
 
@@ -545,6 +556,7 @@ public class App {
                 String[] params = body.split("&");
 
                 String idStr = "";
+                String pais = "";
                 String nome = "";
                 String email = "";
                 String telefone = "";
@@ -558,6 +570,7 @@ public class App {
 
                         switch (key) {
                             case "id": idStr = value; break;
+                            case "pais": pais = value; break;
                             case "nome": nome = value; break;
                             case "email": email = value; break;
                             case "telefone": telefone = value; break;
@@ -573,13 +586,14 @@ public class App {
                     throw new Exception("Ligação à BD falhou!");
                 }
 
-                String sql = "UPDATE clientes SET nome=?, email=?, telefone=? WHERE id=?";
+                String sql = "UPDATE clientes SET nome=?, pais=?, email=?, telefone=? WHERE id=?";
                 PreparedStatement ps = con.prepareStatement(sql);
 
                 ps.setString(1, nome);
-                ps.setString(2, email);
-                ps.setString(3, telefone);
-                ps.setInt(4, id);
+                ps.setString(2, pais);
+                ps.setString(3, email);
+                ps.setString(4, telefone);
+                ps.setInt(5, id);
 
                 ps.executeUpdate();
 
@@ -703,8 +717,560 @@ public class App {
             exchange.sendResponseHeaders(200, html.toString().getBytes().length);
             exchange.getResponseBody().write(html.toString().getBytes());
             exchange.close();
-        });           
+        });      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         
+        //// LISTA ANIMAL
+
+        server.createContext("/animais", exchange -> {
+
+            StringBuilder html = new StringBuilder();
+
+                html.append("""
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            table { border-collapse: collapse; width: 100%; }
+                            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                            th { background-color: #f4f4f4; }
+                            a { text-decoration: none; margin-right: 10px; }
+                        </style>
+                    </head>
+                    <body>
+                    <h2>Lista de Animais</h2>
+                    <a href='/novoanimal'>+ Novo Animal</a><br><br>
+
+                    <table>
+                        <tr>
+                            <th>ID</th>
+                            <th>NumeroCA</th>
+                            <th>NomeAnimal</th>
+                            <th>DataNascimento</th>
+                        </tr>
+                """);             
+
+            Connection con = LigacaoBD.ligar();
+
+            if (con == null) {
+                System.out.println("Erro: ligação falhou!");
+                return;
+            }   
+
+            try {
+                Statement st = con.createStatement();
+                ResultSet rs = st.executeQuery("SELECT * FROM animais");
+
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    String numeroCA = rs.getString("numeroCA");
+                    String nomeAnimal = rs.getString("nomeAnimal");
+                    String dataNascimento = rs.getString("dataNascimento");
+
+                    html.append("<tr>");
+                    html.append("<td>").append(id).append("</td>");
+                    html.append("<td>").append(numeroCA).append("</td>");
+                    html.append("<td>").append(nomeAnimal).append("</td>");
+                    html.append("<td>").append(dataNascimento).append("</td>");
+
+                    html.append("<td>");
+                    html.append("<a href='/editaranimal?id=").append(id).append("'>Editar</a>");
+                    html.append("<a href='/apagaranimal?id=").append(id)
+                        .append("' onclick=\"return confirm('Eliminar animal?')\">Apagar</a>");
+                    html.append("</td>");
+
+                    html.append("</tr>");
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            html.append("""
+                </table>
+                </body>
+                </html>
+            """);
+
+            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, html.toString().getBytes().length);
+            exchange.getResponseBody().write(html.toString().getBytes());
+            exchange.close();
+
+        });
+
+
+
+
+
+
+
+
+
+
+
+        // FORM NOVO ANIMAL
+
+
+        server.createContext("/novoanimal", exchange -> {
+
+            StringBuilder html = new StringBuilder();
+
+            html.append("""
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial; }
+                        form { width: 300px; }
+                        input { width: 100%; padding: 8px; margin-bottom: 10px; }
+                        button { padding: 8px 12px; }
+                        a { text-decoration: none; }
+                    </style>
+                </head>
+                <body>
+
+                <h2>Novo Animal</h2>
+
+                <a href='/animais'>← Voltar à lista</a><br><br>
+
+                <form method='POST' action='/guardaranimal'>
+                    numeroCA:
+                    <input name='numeroCA' required>
+
+                    nomeAnimal:
+                    <input name='nomeAnimal' required>
+
+                    dataNascimento:
+                    <input name='dataNascimento' required>
+
+                    <button type='submit'>Guardar</button>
+                </form>
+
+                </body>
+                </html>
+            """);
+
+            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, html.toString().getBytes().length);
+            exchange.getResponseBody().write(html.toString().getBytes());
+            exchange.close();
+        }); 
+
+
+
+
+
+
+
+
+
+        // GUARDAR NOVO ANIMAL
+
+
+        server.createContext("/guardaranimal", exchange -> {
+
+            if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
+
+            StringBuilder html = new StringBuilder();
+
+            try {
+                // Ler body
+                String body = new String(exchange.getRequestBody().readAllBytes(), "UTF-8");
+
+                String[] params = body.split("&");
+
+                String numeroCA = "";
+                String nomeAnimal = "";
+                String dataNascimento = "";
+
+                for (String p : params) {
+                    String[] kv = p.split("=");
+
+                    if (kv.length == 2) {
+                        String key = kv[0];
+                        String value = java.net.URLDecoder.decode(kv[1], "UTF-8");
+
+                        switch (key) {
+                            case "numeroCA": numeroCA = value; break;
+                            case "nomeAnimal": nomeAnimal = value; break;
+                            case "dataNascimento": dataNascimento = value; break;  
+                        }
+                    }
+                }
+
+                Connection con = LigacaoBD.ligar();
+
+                if (con == null) {
+                    throw new Exception("Ligação à BD falhou!");
+                }
+
+                String sql = "INSERT INTO animais(numeroCA,nomeAnimal,dataNascimento) VALUES (?,?,?)";
+                PreparedStatement ps = con.prepareStatement(sql);
+
+                ps.setString(1, numeroCA);
+                ps.setString(2, nomeAnimal);
+                ps.setString(3, dataNascimento);
+
+                ps.executeUpdate();
+
+                ps.close();
+                con.close();
+
+                // HTML de sucesso 
+                html.append("""
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial; }
+                            a { text-decoration: none; }
+                        </style>
+                    </head>
+                    <body>
+
+                    <h2>:-) Animal guardado com sucesso!</h2>
+
+                    <a href='/animais'>Ver lista</a><br><br>
+                    <a href='/novoanimal'>Inserir novo animal</a>
+
+                    </body>
+                    </html>
+                """);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                html.append("""
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+
+                    <h2>!! Erro ao guardar animal!</h2>
+                    <a href='/novoanimal'>Voltar</a>
+
+                    </body>
+                    </html>
+                """);
+            }
+
+            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, html.toString().getBytes().length);
+            exchange.getResponseBody().write(html.toString().getBytes());
+            exchange.close();
+        });
+
+
+
+
+
+
+
+
+
+
+        // FORM EDITAR ANIMAL
+
+
+        server.createContext("/editaranimal", exchange -> {
+
+            StringBuilder html = new StringBuilder();
+
+            try {
+                String query = exchange.getRequestURI().getQuery();
+
+                if (query == null || !query.contains("id=")) {
+                    throw new Exception("ID inválido");
+                }
+
+                int id = Integer.parseInt(query.split("=")[1]);
+
+                Connection con = LigacaoBD.ligar();
+
+                if (con == null) {
+                    throw new Exception("Ligação à BD falhou!");
+                }
+
+                String sql = "SELECT * FROM animais WHERE id=?";
+                PreparedStatement ps = con.prepareStatement(sql);
+                ps.setInt(1, id);
+
+                ResultSet rs = ps.executeQuery();
+
+                if (!rs.next()) {
+                    throw new Exception("Animal não encontrado");
+                }
+
+                String numeroCA = rs.getString("numeroCA");
+                String nomeAnimal = rs.getString("nomeAnimal");
+                String dataNascimento = rs.getString("dataNascimento");
+
+                html.append("""
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial; }
+                            input { width: 100%; padding: 8px; margin-bottom: 10px; }
+                            form { width: 300px; }
+                        </style>
+                    </head>
+                    <body>
+
+                    <h2>Editar Animal</h2>
+
+                    <a href='/animais'>« Voltar</a><br><br>
+
+                    <form method='POST' action='/atualizaranimal'>
+                """);
+
+                html.append("<input type='hidden' name='id' value='").append(id).append("'>");
+
+                html.append("NumeroCA:<input name='numeroCA' value='").append(numeroCA).append("' required>");
+                html.append("NomeAnimal:<input name='nomeAnimal' value='").append(nomeAnimal).append("' required>");
+                html.append("DataNascimento:<input name='dataNascimento' value='").append(dataNascimento).append("' required>");
+
+                html.append("""
+                    <button type='submit'>Atualizar</button>
+                    </form>
+
+                    </body>
+                    </html>
+                """);
+
+                rs.close();
+                ps.close();
+                con.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                html.append("""
+                    <html>
+                    <body>
+                    <h2>!Erro ao carregar animal</h2>
+                    <a href='/animais'>Voltar</a>
+                    </body>
+                    </html>
+                """);
+            }
+
+            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, html.toString().getBytes().length);
+            exchange.getResponseBody().write(html.toString().getBytes());
+            exchange.close();
+        }); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // ATUALIZAR ANIMAL 
+
+
+        server.createContext("/atualizaranimal", exchange -> {
+
+            if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
+
+            try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), "UTF-8");
+
+                String[] params = body.split("&");
+
+                String idStr = "";
+                String numeroCA = "";
+                String nomeAnimal = "";
+                String dataNascimento = "";
+
+                for (String p : params) {
+                    String[] kv = p.split("=");
+
+                    if (kv.length == 2) {
+                        String key = kv[0];
+                        String value = java.net.URLDecoder.decode(kv[1], "UTF-8");
+
+                        switch (key) {
+                            case "id": idStr = value; break;
+                            case "numeroCA": numeroCA = value; break;
+                            case "nomeAnimal": nomeAnimal = value; break;
+                            case "dataNascimento": dataNascimento = value; break;
+                        }
+                    }
+                }
+
+                int id = Integer.parseInt(idStr);
+
+                Connection con = LigacaoBD.ligar();
+
+                if (con == null) {
+                    throw new Exception("Ligação à BD falhou!");
+                }
+
+                String sql = "UPDATE animais SET numeroCA=?, nomeAnimal=?, dataNascimento=? WHERE id=?";
+                PreparedStatement ps = con.prepareStatement(sql);
+
+                ps.setString(1, numeroCA);
+                ps.setString(2, nomeAnimal);
+                ps.setString(3, dataNascimento);
+                ps.setInt(4, id);
+
+                ps.executeUpdate();
+
+                ps.close();
+                con.close();
+
+                // Redirect (melhor UX)
+                exchange.getResponseHeaders().add("Location", "/animais");
+                exchange.sendResponseHeaders(302, -1);
+                exchange.close();
+                return;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                String resp = """
+                    <html>
+                    <body>
+                    <h2>!Erro ao atualizar animal</h2>
+                    <a href='/animais'>Voltar</a>
+                    </body>
+                    </html>
+                """;
+
+                exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+                exchange.sendResponseHeaders(200, resp.getBytes().length);
+                exchange.getResponseBody().write(resp.getBytes());
+                exchange.close();
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+        // ELIMINAR ANIMAL
+
+
+        server.createContext("/apagaranimal", exchange -> {
+
+            StringBuilder html = new StringBuilder();
+
+            try {
+                String query = exchange.getRequestURI().getQuery();
+
+                if (query == null || !query.contains("id=")) {
+                    throw new Exception("ID inválido");
+                }
+
+                int id = Integer.parseInt(query.split("=")[1]);
+
+                Connection con = LigacaoBD.ligar();
+
+                if (con == null) {
+                    throw new Exception("Ligação à BD falhou!");
+                }
+
+                String sql = "DELETE FROM animais WHERE id=?";
+                PreparedStatement ps = con.prepareStatement(sql);
+
+                ps.setInt(1, id);
+
+                int rows = ps.executeUpdate();
+
+                ps.close();
+                con.close();
+
+                html.append("""
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial; }
+                            a { text-decoration: none; }
+                        </style>
+                    </head>
+                    <body>
+                """);
+
+                if (rows > 0) {
+                    html.append("""
+                        <h2>Animal apagado com sucesso!</h2>
+                        <a href='/animais'>Voltar à lista</a>
+                    """);
+                } else {
+                    html.append("""
+                        <h2>! Animal não encontrado!</h2>
+                        <a href='/animais'>Voltar</a>
+                    """);
+                }
+
+                html.append("""
+                    </body>
+                    </html>
+                """);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                html.append("""
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+
+                    <h2>!!! Erro ao apagar animal!</h2>
+                    <a href='/animais'>Voltar</a>
+
+                    </body>
+                    </html>
+                """);
+            }
+
+            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, html.toString().getBytes().length);
+            exchange.getResponseBody().write(html.toString().getBytes());
+            exchange.close();
+        });      
+
+
+
+
+
       
         
 
